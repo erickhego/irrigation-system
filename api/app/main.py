@@ -1,8 +1,9 @@
 from datetime import datetime
 
 from db import SessionDep, create_all_tables  # type: ignore
-from fastapi import FastAPI  # type: ignore
+from fastapi import FastAPI, HTTPException, status  # type: ignore
 from models import HumiditySensor, Lecture, LectureCreate
+from sqlmodel import select  # type: ignore
 
 app = FastAPI(lifespan=create_all_tables)  # type: ignore
 
@@ -16,9 +17,26 @@ async def create_sensor(sensor_info: HumiditySensor, session: SessionDep):
     return sensor
 
 
+@app.get("/sensor", response_model=list[HumiditySensor])
+async def list_sensors(session: SessionDep):
+    humidity_sensors = session.exec(select(HumiditySensor)).all()
+    return humidity_sensors
+
+
+@app.delete("/sensor/{sensor_id}")
+async def delete_sensor(sensor_id: int, session: SessionDep):
+    sensor_db = session.get(HumiditySensor, sensor_id)
+    if not sensor_db:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Sensor not found"
+        )
+    session.delete(sensor_db)
+    session.commit()
+    return {"detail": "Sensor deleted successfully"}
+
+
 @app.post("/lecture")
 async def create_lecture(lecture_data: LectureCreate, session: SessionDep):
-    # breakpoint()
     lecture_api = lecture_data.model_dump()
     lecture = Lecture(
         sensor_id=lecture_api.get("sensor_id", 0),
