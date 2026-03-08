@@ -1,12 +1,14 @@
 # This file is executed on every boot (including wake-boot from deepsleep)
 
+import os
 import time
 
 import network  # type: ignore
+from dotenv import load_dotenv  # type: ignore
 
-# Configuración de la red
-SSID=REMOVED
-PASSWORD=REMOVED
+load_dotenv()
+SSID = os.getenv("SSID")
+PASSWORD = os.getenv("PASSWORD")
 
 
 def wifi_connect():
